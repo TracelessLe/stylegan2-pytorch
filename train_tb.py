@@ -319,21 +319,21 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
                     #    range=(-1, 1),
                     #)
                     writer.add_scalar(
-                        'loss/g_loss_val', g_loss_val, i)
+                        'loss/g_loss', g_loss_val, i)
                     writer.add_scalar(
-                        'loss/d_loss_val', d_loss_val, i)
+                        'loss/d_loss', d_loss_val, i)
                     writer.add_scalar(
-                        'loss/path_loss_val', path_loss_val, i)
+                        'loss/path_loss', path_loss_val, i)
                     writer.add_scalar(
-                        'loss/r1_val', r1_val, i)
+                        'loss/r1', r1_val, i)
                     writer.add_scalar(
                         'loss/mean_path_length_avg', mean_path_length_avg, i)
                     writer.add_scalar(
-                        'loss/real_score_val', real_score_val, i)
+                        'loss/real_score', real_score_val, i)
                     writer.add_scalar(
-                        'loss/fake_score_val', fake_score_val, i)
+                        'loss/fake_score', fake_score_val, i)
                     writer.add_scalar(
-                        'loss/path_length_val', path_length_val, i)
+                        'loss/path_length', path_length_val, i)
                     img_grid = utils.make_grid(sample, nrow=int(args.n_sample ** 0.5), normalize=True, range=(-1, 1))
                     writer.add_image('result', img_grid, i)
 
@@ -359,7 +359,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="StyleGAN2 trainer")
 
     parser.add_argument("path", type=str, help="path to the lmdb dataset")
-    parser.add_argument('--arch', type=str, default='stylegan2', help='model architectures (stylegan2 | swagan)')
+    parser.add_argument('--arch', type=str, default='stylegan2_gpen', help='model architectures (stylegan2_gpen | stylegan2 | swagan)')
     parser.add_argument(
         "--iter", type=int, default=800000, help="total training iterations"
     )
@@ -419,6 +419,12 @@ if __name__ == "__main__":
         help="channel multiplier factor for the model. config-f = 2, else = 1",
     )
     parser.add_argument(
+        "--narrow",
+        type=float,
+        default=1,
+        help="channel narrow factor for the model. default = 1",
+    )
+    parser.add_argument(
         "--wandb", action="store_true", help="use weights and biases logging"
     )
     parser.add_argument(
@@ -467,23 +473,42 @@ if __name__ == "__main__":
 
     args.start_iter = 0
 
-    if args.arch == 'stylegan2':
+    narrow_flag = False  # whether use narrow
+
+    if args.arch == 'stylegan2_gpen':
+        from stylegan2_gpen import Generator, Discriminator
+        narrow_flag = True
+
+    elif args.arch == 'stylegan2':
         from model import Generator, Discriminator
 
     elif args.arch == 'swagan':
         from swagan import Generator, Discriminator
 
-    generator = Generator(
-        args.size, args.latent, args.n_mlp, channel_multiplier=args.channel_multiplier
-    ).to(device)
-    discriminator = Discriminator(
-        args.size, channel_multiplier=args.channel_multiplier
-    ).to(device)
-    g_ema = Generator(
-        args.size, args.latent, args.n_mlp, channel_multiplier=args.channel_multiplier
-    ).to(device)
-    g_ema.eval()
-    accumulate(g_ema, generator, 0)
+    if narrow_flag:
+        generator = Generator(
+            args.size, args.latent, args.n_mlp, channel_multiplier=args.channel_multiplier, narrow=args.narrow
+        ).to(device)  # size=256, channel_multiplier=1, narrow=0.5
+        discriminator = Discriminator(
+            args.size, channel_multiplier=args.channel_multiplier, narrow=args.narrow
+        ).to(device)
+        g_ema = Generator(
+            args.size, args.latent, args.n_mlp, channel_multiplier=args.channel_multiplier, narrow=args.narrow
+        ).to(device)
+        g_ema.eval()
+        accumulate(g_ema, generator, 0)
+    else:
+        generator = Generator(
+            args.size, args.latent, args.n_mlp, channel_multiplier=args.channel_multiplier
+        ).to(device)
+        discriminator = Discriminator(
+            args.size, channel_multiplier=args.channel_multiplier
+        ).to(device)
+        g_ema = Generator(
+            args.size, args.latent, args.n_mlp, channel_multiplier=args.channel_multiplier
+        ).to(device)
+        g_ema.eval()
+        accumulate(g_ema, generator, 0)
 
     g_reg_ratio = args.g_reg_every / (args.g_reg_every + 1)
     d_reg_ratio = args.d_reg_every / (args.d_reg_every + 1)
