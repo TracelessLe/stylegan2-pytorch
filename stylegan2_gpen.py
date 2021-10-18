@@ -488,11 +488,14 @@ class Generator(nn.Module):
             '''
             noise = [None] * (2 * (self.log_size - 2) + 1)
             '''
-            noise = []
             batch = styles[0].shape[0]
-            for i in range(self.n_mlp + 1):
-                size = 2 ** (i+2)
-                noise.append(torch.randn(batch, self.channels[size], size, size, device=styles[0].device))
+            size_ = 4
+            noise = [torch.randn(batch, self.channels[size_], size_, size_, device=styles[0].device)]
+            for i in range(self.n_mlp):
+                for _ in range(2): 
+                    size = 2 ** (i+3)
+                    noise.append(torch.randn(batch, self.channels[size], size, size, device=styles[0].device))
+            
             
         if truncation < 1:
             style_t = []
