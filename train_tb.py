@@ -131,7 +131,7 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
     pbar = range(args.iter)
     # tensorboard
     date = time.strftime("%Y%m%d%H", time.localtime()) 
-    writer = SummaryWriter('runs/stlyegan2_training_' + date)
+    writer = SummaryWriter(f'runs/{args.arch}_{date}')
 
     if get_rank() == 0:
         pbar = tqdm(pbar, initial=args.start_iter, dynamic_ncols=True, smoothing=0.01)
