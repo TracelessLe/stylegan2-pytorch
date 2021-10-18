@@ -1,1 +1,0 @@
-CUDA_VISIBLE_DEVICES=4,5,6,7 python -m torch.distributed.launch --nproc_per_node=4 train_tb.py --iter 500000  --channel_multiplier 1 --narrow 0.5 --batch 32  /data/wl_test/dataset/ffhq_lmdb

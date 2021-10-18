@@ -426,9 +426,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--isconcat",
-        type=bool,
-        default=True,
-        help="noise isconcat for the model. default = True",
+        dest='test', 
+        action='store_true', 
+        default=False,
+        help="noise isconcat for the model. default = False",
     )
     parser.add_argument(
         "--wandb", action="store_true", help="use weights and biases logging"
