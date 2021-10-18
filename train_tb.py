@@ -425,6 +425,12 @@ if __name__ == "__main__":
         help="channel narrow factor for the model. default = 1",
     )
     parser.add_argument(
+        "--isconcat",
+        type=bool,
+        default=True,
+        help="noise isconcat for the model. default = True",
+    )
+    parser.add_argument(
         "--wandb", action="store_true", help="use weights and biases logging"
     )
     parser.add_argument(
@@ -487,13 +493,15 @@ if __name__ == "__main__":
 
     if narrow_flag:
         generator = Generator(
-            args.size, args.latent, args.n_mlp, channel_multiplier=args.channel_multiplier, narrow=args.narrow
+            args.size, args.latent, args.n_mlp, channel_multiplier=args.channel_multiplier, 
+            isconcat=args.isconcat, narrow=args.narrow
         ).to(device)  # size=256, channel_multiplier=1, narrow=0.5
         discriminator = Discriminator(
             args.size, channel_multiplier=args.channel_multiplier, narrow=args.narrow
         ).to(device)
         g_ema = Generator(
-            args.size, args.latent, args.n_mlp, channel_multiplier=args.channel_multiplier, narrow=args.narrow
+            args.size, args.latent, args.n_mlp, channel_multiplier=args.channel_multiplier, 
+            isconcat=args.isconcat, narrow=args.narrow
         ).to(device)
         g_ema.eval()
         accumulate(g_ema, generator, 0)
